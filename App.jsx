@@ -7,8 +7,10 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
+  Alert,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Feather } from "@expo/vector-icons";
 
 const STORAGE_KEY = "@toDos";
 export default function App() {
@@ -20,12 +22,11 @@ export default function App() {
 
   const onChangeText = (payload) => setText(payload);
 
-  // local storage의 toDo 리스트에 toDos를 저장
+  // storage의 toDo 리스트에 toDos를 저장
   const storeToDos = async (newItems) => {
-    const s = await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newItems));
-    console.log(s);
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newItems));
   };
-  // local storage에 저장된 toDo 리스트 불러오기
+  // storage에 저장된 toDo 리스트 불러오기
   const getToDos = async () => {
     const items = await AsyncStorage.getItem(STORAGE_KEY);
     items ? setToDos(JSON.parse(items)) : null;
@@ -43,6 +44,21 @@ export default function App() {
     setToDos(newToDos);
     await storeToDos(newToDos);
     setText("");
+  };
+  const deleteToDo = (key) => {
+    Alert.alert("Delete", "Are you sure?", [
+      { text: "Cancel" },
+      {
+        text: "I'm Sure",
+        style: "destructive",
+        onPress: () => {
+          const newToDos = { ...toDos };
+          delete newToDos[key];
+          setToDos(newToDos);
+          storeToDos(newToDos);
+        },
+      },
+    ]);
   };
 
   useEffect(() => {
@@ -87,12 +103,15 @@ export default function App() {
           toDos[key].working === working ? (
             <View
               className={
-                "toDo w-full h-11 my-[1.2] px-5 bg-blue-200 rounded-3xl"
+                "toDo w-full h-11 my-[1.2] px-5 flex-row justify-between items-center bg-blue-200 rounded-3xl"
               }
             >
-              <Text className={"mt-2 text-lg font-semibold"}>
-                {toDos[key].text}
-              </Text>
+              <Text className={"text-lg font-semibold"}>{toDos[key].text}</Text>
+              <TouchableOpacity onPress={() => deleteToDo(key)}>
+                <Text className="deleteBtn">
+                  <Feather name="delete" size={24} color="black" />
+                </Text>
+              </TouchableOpacity>
             </View>
           ) : null
         )}
