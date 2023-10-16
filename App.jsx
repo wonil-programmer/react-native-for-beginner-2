@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -8,7 +8,9 @@ import {
   TextInput,
   ScrollView,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
+const STORAGE_KEY = "@toDos";
 export default function App() {
   const [working, setWorking] = useState(true);
   const work = () => setWorking(true);
@@ -17,7 +19,19 @@ export default function App() {
   const [toDos, setToDos] = useState({});
 
   const onChangeText = (payload) => setText(payload);
-  const addToDo = () => {
+
+  // local storage의 toDo 리스트에 toDos를 저장
+  const storeToDos = async (newItems) => {
+    const s = await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newItems));
+    console.log(s);
+  };
+  // local storage에 저장된 toDo 리스트 불러오기
+  const getToDos = async () => {
+    const items = await AsyncStorage.getItem(STORAGE_KEY);
+    items ? setToDos(JSON.parse(items)) : null;
+  };
+
+  const addToDo = async () => {
     if (text === "") {
       return;
     }
@@ -27,10 +41,14 @@ export default function App() {
     // });
     const newToDos = { ...toDos, [Date.now()]: { text, working } };
     setToDos(newToDos);
+    await storeToDos(newToDos);
     setText("");
-    // save todo
   };
-  console.log(toDos);
+
+  useEffect(() => {
+    getToDos();
+  }, []);
+
   return (
     <View className={"container my-10"}>
       <StatusBar style="auto" />
@@ -66,7 +84,7 @@ export default function App() {
       />
       <ScrollView className={"toDoLists h-[600px] mx-8 my-2"}>
         {Object.keys(toDos).map((key) =>
-          toDos[key].workingw === working ? (
+          toDos[key].working === working ? (
             <View
               className={
                 "toDo w-full h-11 my-[1.2] px-5 bg-blue-200 rounded-3xl"
